@@ -47,5 +47,5 @@ tail -n 10 exchange.log
 echo "--- Engine Log (Last 10 lines) ---"
 tail -n 10 engine.log
 
-echo "--- Strategy Output (Orderbook Snapshot) ---"
-tail -n 20 strategy_stdout.log
+echo "--- Strategy Log (Orderbook Snapshot) ---"
+tail -n 30 strategy.log

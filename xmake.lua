@@ -11,11 +11,6 @@ if is_plat("linux") then
     add_syslinks("rt", "pthread")
 end
 
--- 核心库
-target("orderbook")
-    set_kind("static")
-    add_files("src/orderbook.cpp")
-
 -- 应用 1: Simulator
 target("simulator")
     set_kind("binary")
@@ -26,7 +21,6 @@ target("simulator")
 target("simple_strategy")
     set_kind("shared")
     add_files("src/strategy/simple_strategy.cpp")
-    add_deps("orderbook")
     add_packages("quill", "nlohmann_json")
 
 -- 策略加载器

@@ -25,8 +25,7 @@
 │   ├── trade/              # 交易撮合/柜台模块
 │   │   └── mock_trade.h    # 模拟柜台逻辑 (资金、持仓、回报)
 │   ├── strategy/           # 策略框架模块
-│   │   ├── base_strategy.h # 策略基类定义
-│   │   └── simple_strategy.h # 示例策略实现
+│   │   └── base_strategy.h # 策略基类定义
 │   ├── orderbook/          # 订单簿模块
 │   │   └── orderbook.h     # L2 订单簿构建与维护
 │   └── event/              # 监控与审计模块
@@ -38,7 +37,6 @@
 │   ├── strategy_loader/    # 策略加载运行器 (Strategy Runner)
 │   └── event_logger/       # 数据落地与监控程序
 ├── src/
-│   ├── orderbook.cpp       # 订单簿实现
 │   └── strategy/           # 策略源码 (编译为动态库)
 │       └── simple_strategy.cpp
 ├── xmake.lua               # 现代化构建脚本
