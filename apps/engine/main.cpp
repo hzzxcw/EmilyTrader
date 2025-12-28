@@ -12,7 +12,7 @@ public:
         Q_LOG_INFO("MyStrategy initialized");
     }
 
-    void on_tick(strategy::StrategyContext& ctx, const core::Frame& frame, core::nano_t t2) override {
+    void on_tick(strategy::StrategyContext& ctx, const core::Frame& frame) override {
         const auto& order = frame.as<core::TickOrder>();
         // 简单策略：价格低于 1010 就下单
         if (order.price < 1010) {
@@ -23,9 +23,9 @@ public:
             input.volume = 100;
             input.side = '1';
             
-            // 填充审计所需的时间戳
+            // 填充审计所需的时间戳，现在直接从 frame.header 中获取
             input.trigger_t1 = frame.header.push_time;
-            input.trigger_t2 = t2;
+            input.trigger_t2 = frame.header.recv_time;
             
             ctx.send_order(input);
         }
@@ -62,11 +62,14 @@ int main() {
 
     while (true) {
         ctx.poll([&](const core::Frame& frame) {
-            core::nano_t t2 = core::now_nano();
+            // 制作本地拷贝以携带接收时间戳 (T2)
+            core::Frame local_frame = frame;
+            local_frame.header.recv_time = core::now_nano();
+            
             if (frame.header.msg_type == core::MsgType::Entrust || frame.header.msg_type == core::MsgType::Execution) {
-                strategy.on_tick(ctx, frame, t2);
+                strategy.on_tick(ctx, local_frame);
             } else {
-                strategy.on_response(ctx, frame);
+                strategy.on_response(ctx, local_frame);
             }
         });
     }

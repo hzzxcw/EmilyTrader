@@ -11,6 +11,7 @@ struct FrameHeader {
     MsgType msg_type;
     nano_t gen_time;      // 消息产生时间 (T0)
     nano_t push_time;     // 进入 SHM 时间 (T1)
+    nano_t recv_time;     // 消费者接收时间 (T2)
     uint32_t data_len;
 };
 

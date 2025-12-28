@@ -48,7 +48,8 @@ class BaseStrategy {
 public:
     virtual ~BaseStrategy() = default;
     virtual void on_init(StrategyContext& ctx) = 0;
-    virtual void on_tick(StrategyContext& ctx, const core::Frame& frame, core::nano_t t2) = 0;
+    // T2 已包含在 FrameHeader 中，无需单独传递
+    virtual void on_tick(StrategyContext& ctx, const core::Frame& frame) = 0;
     virtual void on_response(StrategyContext& ctx, const core::Frame& frame) = 0;
 };
 
