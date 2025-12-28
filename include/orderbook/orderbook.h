@@ -32,21 +32,19 @@ public:
 
     inline void on_execution(const core::TickExecution& exec) {
         // Chinese A-share executions specify which orders were matched via bid_no and ask_no
-        // Remove the matched orders from the orderbook
+        // Handle partial or full execution based on actual volume
         
         Q_LOG_DEBUG("OrderBook: Execution price={} volume={} bid_no={} ask_no={}", 
             exec.price, exec.volume, exec.bid_no, exec.ask_no);
 
         // Handle bid order execution (买单成交)
         if (exec.bid_no != 0) {
-            Q_LOG_DEBUG("OrderBook: Remove BID order seq={} due to execution", exec.bid_no);
-            remove_order_from_queues(exec.bid_no);
+            handle_order_execution(exec.bid_no, exec.volume);
         }
 
         // Handle ask order execution (卖单成交)
         if (exec.ask_no != 0) {
-            Q_LOG_DEBUG("OrderBook: Remove ASK order seq={} due to execution", exec.ask_no);
-            remove_order_from_queues(exec.ask_no);
+            handle_order_execution(exec.ask_no, exec.volume);
         }
 
         // Clean up empty price levels
@@ -88,6 +86,53 @@ public:
     }
 
 private:
+    // Handle partial or full order execution
+    inline void handle_order_execution(uint64_t seq_no, uint64_t exec_volume) {
+        auto order_it = orders_.find(seq_no);
+        if (order_it == orders_.end()) return;
+
+        auto& order = order_it->second;
+        
+        Q_LOG_DEBUG("OrderBook: Order seq={} original_volume={} exec_volume={}", 
+            seq_no, order.volume, exec_volume);
+
+        if (exec_volume >= order.volume) {
+            // Full execution: remove the order completely
+            remove_order_from_queues(seq_no);
+            Q_LOG_DEBUG("OrderBook: Order seq={} fully executed, removed from orderbook", seq_no);
+        } else {
+            // Partial execution: update the order volume
+            uint64_t remaining_volume = order.volume - exec_volume;
+            order.volume = remaining_volume;
+            
+            // Update in the price queue
+            if (order.side == '1') { // Bid order
+                auto price_it = bids_.find(order.price);
+                if (price_it != bids_.end()) {
+                    auto& queue = price_it->second;
+                    auto order_it_in_queue = std::find_if(queue.begin(), queue.end(),
+                        [seq_no](const core::TickOrder& o) { return o.seq_no == seq_no; });
+                    if (order_it_in_queue != queue.end()) {
+                        order_it_in_queue->volume = remaining_volume;
+                    }
+                }
+            } else { // Ask order
+                auto price_it = asks_.find(order.price);
+                if (price_it != asks_.end()) {
+                    auto& queue = price_it->second;
+                    auto order_it_in_queue = std::find_if(queue.begin(), queue.end(),
+                        [seq_no](const core::TickOrder& o) { return o.seq_no == seq_no; });
+                    if (order_it_in_queue != queue.end()) {
+                        order_it_in_queue->volume = remaining_volume;
+                    }
+                }
+            }
+            
+            Q_LOG_DEBUG("OrderBook: Order seq={} partially executed, remaining volume={}", 
+                seq_no, remaining_volume);
+        }
+    }
+
     // Remove a specific order from the price queues
     inline void remove_order_from_queues(uint64_t seq_no) {
         auto order_it = orders_.find(seq_no);
