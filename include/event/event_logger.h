@@ -16,6 +16,9 @@ public:
         
         trade_file_.open("trade_events.csv");
         trade_file_ << "Type,OrderID,Price,Volume,Status\n";
+
+        market_file_.open("market_data.csv");
+        market_file_ << "Type,SeqNo,Symbol,Price,Volume,Extra\n";
     }
 
     void run() {
@@ -44,12 +47,24 @@ private:
             const auto& report = frame.as<core::ExecReport>();
             trade_file_ << "Exec," << report.order_id << "," << report.exec_price << "," << report.exec_volume << ",Done\n";
             trade_file_.flush();
+        } else if (type == core::MsgType::Entrust) {
+            const auto& order = frame.as<core::TickOrder>();
+            market_file_ << "Entrust," << order.seq_no << "," << order.symbol << "," 
+                         << order.price << "," << order.volume << "," << order.side << "\n";
+            market_file_.flush();
+        } else if (type == core::MsgType::Execution) {
+            const auto& exec = frame.as<core::TickExecution>();
+            market_file_ << "Execution," << exec.seq_no << "," << exec.symbol << "," 
+                         << exec.price << "," << exec.volume << "," 
+                         << exec.bid_no << "|" << exec.ask_no << "\n";
+            market_file_.flush();
         }
     }
 
     std::shared_ptr<core::Poller> poller_;
     std::ofstream latency_file_;
     std::ofstream trade_file_;
+    std::ofstream market_file_;
 };
 
 } // namespace event

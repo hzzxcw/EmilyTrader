@@ -1,13 +1,17 @@
 # EmilyTrader 系统架构文档
 
-本项目是一个模拟中国 A 股行情接入与交易的高性能量化系统原型。其核心架构深受 **KungFu (功夫)** 的 **YiJinJing (易筋经)** 引擎启发，采用了**去中心化通道**和**全路径延迟审计**的设计。
+本项目是一个模拟中国 A 股行情接入与交易的高性能量化系统原型。其核心架构深受 **KungFu (功夫)** 的 **YiJinJing (易筋经)** 引擎启发，采用了**去中心化通道**、**全路径延迟审计**以及**分布式策略运行**的设计。
 
 ## 1. 系统目录结构
 
 ```text
 .
 ├── config/                 # 配置文件目录
-│   └── config.json         # 定义 SHM 名称、日志级别、系统参数
+│   ├── engine.json         # 系统主控配置
+│   ├── exchange.json       # 交易所仿真配置
+│   ├── simulator.json      # 模拟器配置
+│   ├── event_logger.json   # 审计与监控配置
+│   └── strategy.json       # 策略加载配置 (含策略库路径与自定义参数)
 ├── include/
 │   ├── core/               # 核心底层引擎
 │   │   ├── common.h        # 基础类型定义与纳秒计时器
@@ -22,13 +26,21 @@
 │   │   └── mock_trade.h    # 模拟柜台逻辑 (资金、持仓、回报)
 │   ├── strategy/           # 策略框架模块
 │   │   ├── base_strategy.h # 策略基类定义
-│   │   └── strategy_context.h # 策略运行上下文 (包含下单延迟审计)
+│   │   └── simple_strategy.h # 示例策略实现
+│   ├── orderbook/          # 订单簿模块
+│   │   └── orderbook.h     # L2 订单簿构建与维护
 │   └── event/              # 监控与审计模块
 │       └── event_logger.h  # 全系统镜像落地 (CSV) 与延迟分析
 ├── apps/                   # 独立运行的进程应用
 │   ├── simulator/          # 行情模拟程序
-│   ├── engine/             # 策略执行主引擎
+│   ├── engine/             # 系统主控 (Journal Manager)
+│   ├── exchange/           # 交易所仿真服务 (Mock Exchange)
+│   ├── strategy_loader/    # 策略加载运行器 (Strategy Runner)
 │   └── event_logger/       # 数据落地与监控程序
+├── src/
+│   ├── orderbook.cpp       # 订单簿实现
+│   └── strategy/           # 策略源码 (编译为动态库)
+│       └── simple_strategy.cpp
 ├── xmake.lua               # 现代化构建脚本
 └── run_all.sh              # 一键联调启动脚本
 ```
@@ -37,19 +49,29 @@
 
 ## 2. 核心性能设计
 
-### 2.1 去中心化通道 (Decentralized Journal)
-系统放弃了传统的中心化 MPMC (多生产者多消费者) 队列，转而采用 **单写多读 (Single-Writer Multi-Reader)** 模式。
-*   **零竞争写入**：每个通道（如行情通道、交易响应通道）仅允许一个特定的 Writer 进程写入。写操作仅涉及一个原子指针的递增，完全消除了 CPU 缓存行在多个核心间的剧烈波动（Cache Bouncing）。
-*   **物理隔离**：不同的业务流存在于不同的共享内存段中。策略模块仅读取行情和回报，而不参与日志落地等重量级 I/O 竞争。
+### 2.1 去中心化与分布式 (Distributed & Decentralized)
+系统采用了真正的分布式设计，各个组件通过共享内存（SHM）进行松耦合通信：
 
-### 2.2 缓存行对齐 (Cache Line Alignment)
-*   **防止伪共享**：所有的 `Frame` 结构体和 `Journal` 内部的 `write_idx` 均使用 `alignas(64)` 进行对齐。这确保了写索引和数据区不会落在同一个缓存行中，极大地提升了跨核读取的并行效率。
+*   **System Engine (`apps/engine`)**：
+    *   **角色**：系统主控与 Journal 管理器。
+    *   **职责**：负责初始化和分配核心的共享内存文件（Journals），确保系统环境就绪。它不参与任何交易逻辑。
+*   **Mock Exchange (`apps/exchange`)**：
+    *   **角色**：交易所与柜台仿真服务。
+    *   **职责**：作为 `MockTrade` 的宿主，监听 `Strategy Journal` 中的订单请求，进行模拟撮合，并将执行报告（ExecReport）写入 `Trade Journal`。
+*   **Strategy Runner (`apps/strategy_loader`)**：
+    *   **角色**：策略的宿主进程。
+    *   **动态加载**：通过 `dlopen` 加载策略的共享库 (`.so`)，实现了策略逻辑与运行环境的隔离。
+    *   **纯粹计算**：只负责接收行情、维护本地 OrderBook、发送指令。
+*   **Simulator**：独立的行情源，负责向 `Market Journal` 写入高频行情（Entrust/Execution）。
 
-### 2.3 极速忙等 (Busy-Waiting)
-*   系统在热路径上完全废弃了 `usleep` 或信号量等系统调用，采用 `cpu_pause()` (x86: `_mm_pause`, ARM: `yield`) 进行自旋。响应延迟从毫秒级直接降至**纳秒级**。
+### 2.2 订单簿 (OrderBook)
+*   **功能**：基于逐笔委托（Entrust）和逐笔成交（Execution）构建实时的 L2 盘口（买一/卖一等）。
+*   **位置**：策略内部维护一份私有的 `OrderBook` 对象，根据接收到的行情实时更新。
+*   **特性**：支持快照输出（Snapshot），便于策略决策和调试。
 
-### 2.4 异步格式化日志 (Zero-Cost Formatting)
-*   集成 **Quill** 日志库。与传统日志库不同，Quill 甚至将 `printf` 类字符串格式化的开销也从行情处理线程移到了后端线程。
+### 2.3 动态策略加载
+*   策略被编译为独立的共享对象 (`.so` / `.dylib`)。
+*   `strategy_loader` 根据 `config/strategy.json` 配置动态加载策略库，并支持传入 JSON 配置参数（如风控阈值等）。
 
 ---
 
@@ -59,17 +81,22 @@
 *   **T0**：行情源产生时间（模拟外部数据源）。
 *   **T1**：行情进入系统时间（MarketWriter 打标）。
 *   **T2**：策略接收行情时间（Strategy 处理起点）。
-*   **T3**：决策下单并进入柜台时间（Order Action）。
+*   **T3**：策略决策并写入指令通道的时间（Strategy 动作点）。
 
-**EventLogger** 通过 `Poller` 实时聚合上述所有数据，计算 `Ingest_Lat (T1-T0)` 和 `Order_Lat (T3-T1)`。通过 SHM 传输这些统计量，实现了对系统性能的**零干扰监控**。
+**EventLogger** 通过监听所有相关通道，实时计算并落地：
+*   `Ingest_Lat (T1-T0)`：接入延迟。
+*   `Order_Lat (T3-T1)`：策略内部决策耗时。
 
 ---
 
 ## 4. 模块化设计理念
-*   **可扩展性**：通过 `Frame` 结构的 `Payload` 模式，增加新的业务数据结构无需修改底层 SHM 逻辑，只需在 `data_types.h` 中定义即可。
-*   **Mock 交易解耦**：`MockTrade` 被封装为独立的类，其状态变更通过 `TradeJournal` 异步广播。这使得策略可以像接入真实柜台一样，通过订阅消息来更新持仓，而不是同步阻塞等待结果。
+*   **配置分离**：每个模块拥有独立的配置文件，支持自定义参数。
+*   **接口解耦**：`StrategyContext` 不再持有 `MockTrade` 对象，而是纯粹作为 SHM 的写入接口，实现了策略与交易实现的物理隔离。
 
 ## 5. 如何扩展
-1.  **增加新行情源**：在 `apps/` 下新建程序，利用 `MarketWriter` 写入 `market_shm_name` 指定的通道。
-2.  **开发新策略**：继承 `BaseStrategy` 并实现其虚函数，在 `TradingEngine` 中挂载即可。
-3.  **增加监控指标**：修改 `LatencyStats` 结构并在策略逻辑中记录新时间戳。
+1.  **开发新策略**：
+    *   继承 `strategy::BaseStrategy`。
+    *   实现 `on_init` (接收 JSON 配置), `on_tick`, `on_response`。
+    *   在 cpp 中导出 `create_strategy` 工厂函数。
+    *   编译为 `.so` 并在 `strategy.json` 中配置路径。
+2.  **增加新行情源**：在 `apps/` 下新建程序，利用 `MarketWriter` 写入 `market_shm_name` 指定的通道。

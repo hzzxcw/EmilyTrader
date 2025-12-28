@@ -11,8 +11,10 @@ if is_plat("linux") then
     add_syslinks("rt", "pthread")
 end
 
--- 核心库 (Header-only or shared)
--- 这里我们大部分是模板，所以直接包含即可
+-- 核心库
+target("orderbook")
+    set_kind("static")
+    add_files("src/orderbook.cpp")
 
 -- 应用 1: Simulator
 target("simulator")
@@ -20,10 +22,29 @@ target("simulator")
     add_files("apps/simulator/main.cpp")
     add_packages("quill", "nlohmann_json")
 
--- 应用 2: Trading Engine
-target("trading_engine")
+-- 策略动态库
+target("simple_strategy")
+    set_kind("shared")
+    add_files("src/strategy/simple_strategy.cpp")
+    add_deps("orderbook")
+    add_packages("quill", "nlohmann_json")
+
+-- 策略加载器
+target("strategy_loader")
+    set_kind("binary")
+    add_files("apps/strategy_loader/main.cpp")
+    add_packages("quill", "nlohmann_json")
+
+-- 应用: System Engine (Journal Manager)
+target("engine")
     set_kind("binary")
     add_files("apps/engine/main.cpp")
+    add_packages("quill", "nlohmann_json")
+
+-- 应用: Mock Exchange
+target("exchange")
+    set_kind("binary")
+    add_files("apps/exchange/main.cpp")
     add_packages("quill", "nlohmann_json")
 
 -- 应用 3: Event Logger

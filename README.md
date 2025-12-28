@@ -9,9 +9,11 @@ EmilyTrader 是一个面向高性能、低延迟场景设计的中国 A 股行�
     -   **无锁设计**：全链路数据交换无任何互斥锁（Mutex）或原子竞争。
     -   **缓存优化**：严格的缓存行对齐（Cache Line Alignment），消除伪共享。
     -   **微秒级响应**：下单全链路延迟稳定在 **1-3 微秒** 级别。
--   **全模块化设计**：
-    -   `Simulator`：多线程高频行情模拟。
-    -   `TradingEngine`：可插拔策略框架与 Mock 柜台。
+-   **分布式策略运行**：
+    -   `Simulator`：多线程高频行情模拟（支持 Entrust/Execution 混合流）。
+    -   `System Engine` (`apps/engine`)：系统主控与 Journal 管理器，负责环境初始化。
+    -   `Exchange Service` (`apps/exchange`)：独立的 Mock 柜台服务，负责撮合与回报。
+    -   `Strategy Runner` (`apps/strategy_loader`)：独立的策略宿主，支持动态加载 `.so` 策略库。
     -   `EventLogger`：独立 Telemetry 进程，实时性能监控与审计。
 -   **异步日志系统**：集成高性能 `Quill` 日志库，I/O 开销完全脱离热路径。
 
@@ -28,7 +30,7 @@ EmilyTrader 是一个面向高性能、低延迟场景设计的中国 A 股行�
 
 ### 编译安装
 ```bash
-# 克隆项目 (假设您已在 GitHub 上配置 SSH)
+# 克隆项目
 git clone git@github.com:hzzxcw/EmilyTrader.git
 cd EmilyTrader
 
@@ -46,12 +48,22 @@ chmod +x run_all.sh
 运行结束后，您可以查看生成的日志和统计数据：
 -   `latency_stats.csv`：行情接入与下单延迟明细。
 -   `trade_events.csv`：成交汇报与柜台响应记录。
--   `engine.log`：策略运行实时日志。
+-   `market_data.csv`：录制的行情数据。
+-   `exchange.log`：交易所仿真服务日志。
+-   `strategy.log`：策略运行日志（含自定义参数）。
+-   `strategy_stdout.log`：策略控制台输出（含 OrderBook 快照）。
 
 ## 🛠️ 模块指南
--   **行情接入**：调用 `market::MarketWriter` 接口。
--   **策略开发**：继承 `BaseStrategy` 并实现 `on_tick` / `on_response`。
--   **配置修改**：编辑 `config/config.json` 调整 SHM 路径和日志级别。
+-   **策略开发**：
+    1.  继承 `strategy::BaseStrategy`。
+    2.  实现接口并在 `src/` 下创建 cpp 文件。
+    3.  使用 `xmake` 编译为共享库 (`.so` / `.dylib`)。
+    4.  在 `config/strategy.json` 中配置库路径和参数。
+-   **配置修改**：
+    -   `config/engine.json`: 系统主控配置。
+    -   `config/exchange.json`: 交易所服务配置。
+    -   `config/simulator.json`: 模拟器配置。
+    -   `config/strategy.json`: 策略加载路径与参数。
 
 ---
 *Created with ❤️ for Emily.*

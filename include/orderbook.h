@@ -1,6 +1,6 @@
 #pragma once
 
-#include "data_types.h"
+#include "core/data_types.h"
 #include <map>
 #include <vector>
 #include <iostream>
@@ -9,8 +9,8 @@ namespace quote {
 
 class OrderBook {
 public:
-    void on_order(const TickOrder& order);
-    void on_execution(const TickExecution& exec);
+    void on_order(const core::TickOrder& order);
+    void on_execution(const core::TickExecution& exec);
     void display_top(int levels = 5) const;
 
     // 获取盘口中间价
@@ -22,7 +22,7 @@ private:
     std::map<uint32_t, uint64_t, std::less<uint32_t>> asks_;
 
     // 存储未成交的订单 (简化：SeqNo -> Order)
-    std::map<uint64_t, TickOrder> orders_;
+    std::map<uint64_t, core::TickOrder> orders_;
 };
 
 } // namespace quote

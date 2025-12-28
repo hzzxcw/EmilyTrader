@@ -1,0 +1,9 @@
+{
+    "market_shm_name": "/market_journal",
+    "strategy_shm_name": "/strategy_journal",
+    "trade_shm_name": "/trade_journal",
+    "log_level": "debug",
+    "log_file": "strategy.log",
+    "strategy_so_path": "build/macosx/arm64/release/libsimple_strategy.dylib",
+    "max_order_price": 1010
+}

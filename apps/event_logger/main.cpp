@@ -6,9 +6,22 @@
 
 using namespace quote;
 
-int main() {
-    auto cfg = core::Config::load("config/config.json");
-    core::Logger::init("event_logger.log", cfg.log_level);
+int main(int argc, char* argv[]) {
+    std::string config_path = "config/event_logger.json";
+    if (argc > 1) {
+        config_path = argv[1];
+    }
+    auto cfg = core::Config::load(config_path);
+
+    std::string log_file = "event_logger.log";
+    if (!cfg.log_file.empty() && cfg.log_file != "system.log") {
+        log_file = cfg.log_file;
+    }
+    if (argc > 2) {
+        log_file = argv[2];
+    }
+
+    core::Logger::init(log_file, cfg.log_level);
 
     auto mkt_journal = std::make_shared<core::Journal>(cfg.market_shm_name, false);
     auto trade_journal = std::make_shared<core::Journal>(cfg.trade_shm_name, false);
