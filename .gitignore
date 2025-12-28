@@ -1,0 +1,25 @@
+# Binaries and build artifacts
+build/
+.xmake/
+bin/
+*.o
+*.a
+*.so
+*.dylib
+simulator
+recorder
+strategy
+trading_engine
+event_logger
+
+# Logs and Data
+*.log
+*.csv
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
+
+# Temporary files
+*.tmp
