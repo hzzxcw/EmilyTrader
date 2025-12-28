@@ -37,6 +37,16 @@ public:
         }
     }
 
+    // TODO: Fix thread safety issue for multi-writer scenarios
+    // Current implementation has race conditions:
+    // 1. Multiple threads may read the same write_idx and write to same location
+    // 2. Data corruption from concurrent writes to the same frame
+    // 3. Lost updates when multiple threads increment write_idx
+    // 
+    // Solutions to consider:
+    // - Use CAS (Compare-And-Swap) loop for atomic reservation
+    // - Add mutex protection for write operations
+    // - Enforce single-writer pattern in system design
     void write(MsgType type, uint32_t source_id, nano_t gen_time, const void* data, size_t len) {
         uint64_t idx = ptr_->write_idx.load(std::memory_order_relaxed);
         Frame& frame = ptr_->buffer[idx & JournalQueue<DEFAULT_CAPACITY>::mask];
