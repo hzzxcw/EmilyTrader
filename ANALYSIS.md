@@ -43,7 +43,9 @@ graph TD
     end
 
     %% Initialization
-    ENG -.-> "Manage Lifecycle" -.-> MJ & TJ & SJ
+    ENG -. "Manage Lifecycle" .-> MJ
+    ENG -.-> TJ
+    ENG -.-> SJ
 
     %% Data Flows
     SIM -- "Write Ticks (T1)" --> MJ
