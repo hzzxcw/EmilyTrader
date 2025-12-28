@@ -16,14 +16,15 @@ public:
                    std::shared_ptr<trade::MockTrade> trade_module)
         : poller_(poller), writer_(strategy_journal), trade_(trade_module) {}
 
-    void send_order(const core::OrderInput& input, core::nano_t trigger_t1, core::nano_t trigger_t2) {
-        // 计算下单延迟 (T3)
+    // 接口已简化：不再显式传递时间戳，直接从 input 中读取
+    void send_order(const core::OrderInput& input) {
         core::nano_t t3 = core::now_nano();
+        
         core::LatencyStats stats;
         stats.type = core::MsgType::OrderInput;
         stats.seq_or_id = input.order_id;
-        stats.t1 = trigger_t1;
-        stats.t2 = trigger_t2;
+        stats.t1 = input.trigger_t1;
+        stats.t2 = input.trigger_t2;
         stats.t3 = t3;
         
         // 写入策略通道（用于 Telemetry）

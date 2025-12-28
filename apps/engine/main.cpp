@@ -23,8 +23,11 @@ public:
             input.volume = 100;
             input.side = '1';
             
-            // Q_LOG_INFO("Strategy signal: Buying {} at {}", input.symbol, input.price);
-            ctx.send_order(input, frame.header.push_time, t2);
+            // 填充审计所需的时间戳
+            input.trigger_t1 = frame.header.push_time;
+            input.trigger_t2 = t2;
+            
+            ctx.send_order(input);
         }
     }
 
@@ -59,7 +62,7 @@ int main() {
 
     while (true) {
         ctx.poll([&](const core::Frame& frame) {
-            core::nano_t t2 = core::now_nano(); // 记录策略接收到帧的时间
+            core::nano_t t2 = core::now_nano();
             if (frame.header.msg_type == core::MsgType::Entrust || frame.header.msg_type == core::MsgType::Execution) {
                 strategy.on_tick(ctx, frame, t2);
             } else {

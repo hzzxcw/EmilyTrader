@@ -32,6 +32,10 @@ struct OrderInput {
     uint32_t price;
     uint64_t volume;
     char side;
+
+    // 延迟审计字段：记录该订单是由哪个时间点的行情触发的
+    nano_t trigger_t1;
+    nano_t trigger_t2;
 };
 
 // --- Trade Responses ---
