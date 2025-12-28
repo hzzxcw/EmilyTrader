@@ -1,4 +1,4 @@
-# 系统架构文档 (System Architecture Document)
+# EmilyTrader 系统架构文档
 
 本项目是一个模拟中国 A 股行情接入与交易的高性能量化系统原型。其核心架构深受 **KungFu (功夫)** 的 **YiJinJing (易筋经)** 引擎启发，采用了**去中心化通道**和**全路径延迟审计**的设计。
 

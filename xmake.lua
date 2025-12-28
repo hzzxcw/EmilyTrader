@@ -1,3 +1,4 @@
+set_project("EmilyTrader")
 add_rules("mode.debug", "mode.release")
 
 -- 添加依赖
