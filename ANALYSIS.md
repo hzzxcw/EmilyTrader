@@ -23,7 +23,7 @@ graph TD
     subgraph "Strategy Layer"
         SL[Strategy Runner Process]
         OB[OrderBook]
-        STR[Strategy Logic (.so)]
+        STR["Strategy Logic (.so)"]
     end
 
     subgraph "Exchange Layer"
