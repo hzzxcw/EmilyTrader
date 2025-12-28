@@ -16,13 +16,14 @@ public:
                    std::shared_ptr<trade::MockTrade> trade_module)
         : poller_(poller), writer_(strategy_journal), trade_(trade_module) {}
 
-    void send_order(const core::OrderInput& input, core::nano_t trigger_t1) {
-        // 计算下单延迟 (T3 - T1)
+    void send_order(const core::OrderInput& input, core::nano_t trigger_t1, core::nano_t trigger_t2) {
+        // 计算下单延迟 (T3)
         core::nano_t t3 = core::now_nano();
         core::LatencyStats stats;
         stats.type = core::MsgType::OrderInput;
         stats.seq_or_id = input.order_id;
         stats.t1 = trigger_t1;
+        stats.t2 = trigger_t2;
         stats.t3 = t3;
         
         // 写入策略通道（用于 Telemetry）
@@ -46,7 +47,7 @@ class BaseStrategy {
 public:
     virtual ~BaseStrategy() = default;
     virtual void on_init(StrategyContext& ctx) = 0;
-    virtual void on_tick(StrategyContext& ctx, const core::Frame& frame) = 0;
+    virtual void on_tick(StrategyContext& ctx, const core::Frame& frame, core::nano_t t2) = 0;
     virtual void on_response(StrategyContext& ctx, const core::Frame& frame) = 0;
 };
 

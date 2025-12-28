@@ -12,7 +12,7 @@ public:
         Q_LOG_INFO("MyStrategy initialized");
     }
 
-    void on_tick(strategy::StrategyContext& ctx, const core::Frame& frame) override {
+    void on_tick(strategy::StrategyContext& ctx, const core::Frame& frame, core::nano_t t2) override {
         const auto& order = frame.as<core::TickOrder>();
         // 简单策略：价格低于 1010 就下单
         if (order.price < 1010) {
@@ -23,15 +23,15 @@ public:
             input.volume = 100;
             input.side = '1';
             
-            Q_LOG_INFO("Strategy signal: Buying {} at {}", input.symbol, input.price);
-            ctx.send_order(input, frame.header.push_time);
+            // Q_LOG_INFO("Strategy signal: Buying {} at {}", input.symbol, input.price);
+            ctx.send_order(input, frame.header.push_time, t2);
         }
     }
 
     void on_response(strategy::StrategyContext& ctx, const core::Frame& frame) override {
         if (frame.header.msg_type == core::MsgType::OrderResponse) {
             const auto& resp = frame.as<core::OrderResponse>();
-            Q_LOG_INFO("Received OrderResponse for ID: {}, Success: {}", resp.order_id, resp.success);
+            // Q_LOG_INFO("Received OrderResponse for ID: {}, Success: {}", resp.order_id, resp.success);
         }
     }
 };
@@ -59,8 +59,9 @@ int main() {
 
     while (true) {
         ctx.poll([&](const core::Frame& frame) {
+            core::nano_t t2 = core::now_nano(); // 记录策略接收到帧的时间
             if (frame.header.msg_type == core::MsgType::Entrust || frame.header.msg_type == core::MsgType::Execution) {
-                strategy.on_tick(ctx, frame);
+                strategy.on_tick(ctx, frame, t2);
             } else {
                 strategy.on_response(ctx, frame);
             }
