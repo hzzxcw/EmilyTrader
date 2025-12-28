@@ -20,35 +20,48 @@ graph TD
         SJ[Strategy Journal /strategy_journal]
     end
 
-    subgraph "Computing Engine"
-        ENG[Trading Engine Process]
+    subgraph "Strategy Layer"
+        SL[Strategy Runner Process]
         OB[OrderBook]
-        STR[Strategy Logic]
+        STR[Strategy Logic (.so)]
+    end
+
+    subgraph "Exchange Layer"
+        EX[Mock Exchange Process]
         MT[Mock Trade Module]
+    end
+    
+    subgraph "System Layer"
+        ENG[System Engine Process]
     end
 
     subgraph "Telemetry & Persistence"
         EVL[Event Logger Process]
         CSV1[latency_stats.csv]
         CSV2[trade_events.csv]
+        CSV3[market_data.csv]
     end
+
+    %% Initialization
+    ENG -.-> "Manage Lifecycle" -.-> MJ & TJ & SJ
 
     %% Data Flows
     SIM -- "Write Ticks (T1)" --> MJ
-    MJ -- "Read Ticks (T2)" --> ENG
-    ENG -- "Update" --> OB
+    
+    MJ -- "Read Ticks (T2)" --> SL
+    SL -- "Update" --> OB
     OB -- "Signal" --> STR
-    STR -- "Place Order (T3)" --> MT
+    STR -- "Write OrderInput (T3)" --> SJ
+    
+    SJ -- "Read OrderInput" --> EX
+    EX -- "Execute" --> MT
     MT -- "Write Response/Exec" --> TJ
-    TJ -- "Read Response" --> ENG
+    
+    TJ -- "Read Response" --> SL
     
     %% Telemetry Flow
-    STR -- "Write Stats" --> SJ
-    MJ -- "Audit" --> EVL
-    TJ -- "Audit" --> EVL
-    SJ -- "Audit" --> EVL
-    EVL -- "Persist" --> CSV1
-    EVL -- "Persist" --> CSV2
+    MJ & TJ & SJ -- "Audit" --> EVL
+    EVL -- "Persist" --> CSV1 & CSV2 & CSV3
 ```
 
 ---
@@ -58,8 +71,8 @@ graph TD
 本项目抛弃了传统的“加锁队列”或“多生产者竞争队列 (MPMC)”，采用了 **单写多读 (SPMC)** 的去中心化模式：
 
 1.  **消除写竞争**：每个 Journal 文件（共享内存块）在物理上只允许**一个进程写入**。这意味着写操作不需要原子锁（CAS）争用，CPU 缓存行不会在多个核心间剧烈抖动，从而实现了近乎理论极限的写入速度。
-2.  **顺序追加与持久化潜力**：数据像流水一样顺序追加，方便未来扩展为文件持久化，实现全系统回放。
-3.  **多路聚合轮询 (Poller)**：消费者（如 Trading Engine）通过 `Poller` 极速轮询多个通道，将行情流和成交流在消费端进行逻辑合并。
+2.  **分布式计算**：策略计算与交易撮合物理分离。策略进程 (`Strategy Runner`) 专注于计算信号，交易所进程 (`Mock Exchange`) 专注于订单状态维护，两者通过无锁 SHM 异步通信，互不阻塞。
+3.  **多路聚合轮询 (Poller)**：消费者（如 Strategy Runner）通过 `Poller` 极速轮询多个通道，将行情流和成交流在消费端进行逻辑合并。
 
 ---
 
@@ -87,7 +100,9 @@ graph TD
 | 文件 | 作用 |
 | :--- | :--- |
 | `apps/simulator/main.cpp` | 模拟行情源。独立进程，模拟高频推送委托数据。 |
-| `apps/engine/main.cpp` | **系统大脑**。运行策略逻辑，计算买卖信号并与虚拟柜台交互。 |
+| `apps/engine/main.cpp` | **系统主控**。负责 Journal 文件的创建与初始化，维持系统 SHM 环境。 |
+| `apps/exchange/main.cpp` | **交易所仿真**。独立的撮合服务，监听策略请求并生成回报。 |
+| `apps/strategy_loader/main.cpp` | **策略宿主**。动态加载策略 `.so`，负责策略的事件循环与 OrderBook 维护。 |
 | `apps/event_logger/main.cpp` | **监控塔**。独立进程，将系统运行状态和延迟统计实时持久化到磁盘。 |
 
 ---
