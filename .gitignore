@@ -6,11 +6,11 @@ bin/
 *.a
 *.so
 *.dylib
-simulator
-recorder
-strategy
-trading_engine
-event_logger
+/simulator
+/recorder
+/strategy
+/trading_engine
+/event_logger
 
 # Logs and Data
 *.log
