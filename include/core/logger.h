@@ -8,7 +8,7 @@
 #include <quill/sinks/FileSink.h>
 #include <string>
 
-namespace quote {
+namespace etrader {
 namespace core {
 
 class Logger {
@@ -33,9 +33,9 @@ public:
 };
 
 } // namespace core
-} // namespace quote
+} // namespace etrader
 
-#define Q_LOG_DEBUG(fmt, ...) LOG_DEBUG(quote::core::Logger::get(), fmt, ##__VA_ARGS__)
-#define Q_LOG_INFO(fmt, ...) LOG_INFO(quote::core::Logger::get(), fmt, ##__VA_ARGS__)
-#define Q_LOG_WARN(fmt, ...) LOG_WARNING(quote::core::Logger::get(), fmt, ##__VA_ARGS__)
-#define Q_LOG_ERROR(fmt, ...) LOG_ERROR(quote::core::Logger::get(), fmt, ##__VA_ARGS__)
+#define Q_LOG_DEBUG(fmt, ...) LOG_DEBUG(etrader::core::Logger::get(), fmt, ##__VA_ARGS__)
+#define Q_LOG_INFO(fmt, ...) LOG_INFO(etrader::core::Logger::get(), fmt, ##__VA_ARGS__)
+#define Q_LOG_WARN(fmt, ...) LOG_WARNING(etrader::core::Logger::get(), fmt, ##__VA_ARGS__)
+#define Q_LOG_ERROR(fmt, ...) LOG_ERROR(etrader::core::Logger::get(), fmt, ##__VA_ARGS__)

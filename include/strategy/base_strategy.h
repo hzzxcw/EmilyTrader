@@ -7,7 +7,7 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 
-namespace quote {
+namespace etrader {
 namespace strategy {
 
 class StrategyContext {
@@ -47,4 +47,4 @@ public:
 };
 
 } // namespace strategy
-} // namespace quote
+} // namespace etrader

@@ -5,7 +5,7 @@
 #include <cstring>
 #include "core/logger.h"
 
-namespace quote {
+namespace etrader {
 namespace strategy {
 
 class SimpleStrategy : public BaseStrategy {
@@ -64,10 +64,10 @@ private:
 };
 
 } // namespace strategy
-} // namespace quote
+} // namespace etrader
 
 extern "C" {
-    quote::strategy::BaseStrategy* create_strategy() {
-        return new quote::strategy::SimpleStrategy();
+    etrader::strategy::BaseStrategy* create_strategy() {
+        return new etrader::strategy::SimpleStrategy();
     }
 }

@@ -9,7 +9,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-namespace quote {
+namespace etrader {
 namespace core {
 
 template <uint32_t Capacity>
@@ -71,4 +71,4 @@ private:
 };
 
 } // namespace core
-} // namespace quote
+} // namespace etrader

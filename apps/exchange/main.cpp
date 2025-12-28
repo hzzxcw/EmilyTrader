@@ -6,7 +6,7 @@
 #include <iostream>
 #include <memory>
 
-using namespace quote;
+using namespace etrader;
 
 int main(int argc, char* argv[]) {
     std::string config_path = "config/exchange.json";

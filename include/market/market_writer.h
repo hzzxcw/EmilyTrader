@@ -4,7 +4,7 @@
 #include "core/data_types.h"
 #include <memory>
 
-namespace quote {
+namespace etrader {
 namespace market {
 
 class MarketWriter {
@@ -26,4 +26,4 @@ private:
 };
 
 } // namespace market
-} // namespace quote
+} // namespace etrader

@@ -10,7 +10,7 @@
 #include <sstream>
 #include <algorithm>
 
-namespace quote {
+namespace etrader {
 
 class OrderBook {
 public:
@@ -200,4 +200,4 @@ private:
     std::map<uint64_t, core::TickOrder> orders_;
 };
 
-} // namespace quote
+} // namespace etrader

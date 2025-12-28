@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstring>
 
-namespace quote {
+namespace etrader {
 namespace core {
 
 // --- Market Data ---
@@ -62,4 +62,4 @@ struct LatencyStats {
 };
 
 } // namespace core
-} // namespace quote
+} // namespace etrader

@@ -5,7 +5,7 @@
 #include <fstream>
 #include <iostream>
 
-namespace quote {
+namespace etrader {
 namespace event {
 
 class EventLogger {
@@ -68,4 +68,4 @@ private:
 };
 
 } // namespace event
-} // namespace quote
+} // namespace etrader

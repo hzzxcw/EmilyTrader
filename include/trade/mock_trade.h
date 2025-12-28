@@ -5,7 +5,7 @@
 #include <map>
 #include <string>
 
-namespace quote {
+namespace etrader {
 namespace trade {
 
 class MockTrade {
@@ -53,4 +53,4 @@ private:
 };
 
 } // namespace trade
-} // namespace quote
+} // namespace etrader

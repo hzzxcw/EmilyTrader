@@ -4,7 +4,7 @@
 #include "event/event_logger.h"
 #include <iostream>
 
-using namespace quote;
+using namespace etrader;
 
 int main(int argc, char* argv[]) {
     std::string config_path = "config/event_logger.json";

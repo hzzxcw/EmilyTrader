@@ -7,7 +7,7 @@
 #include <immintrin.h>
 #endif
 
-namespace quote {
+namespace etrader {
 namespace core {
 
 // 使用 PAUSE 指令优化忙等
@@ -48,4 +48,4 @@ enum class MsgType : uint16_t {
 };
 
 } // namespace core
-} // namespace quote
+} // namespace etrader

@@ -3,7 +3,7 @@
 #include "common.h"
 #include <cstring>
 
-namespace quote {
+namespace etrader {
 namespace core {
 
 struct FrameHeader {
@@ -35,4 +35,4 @@ struct alignas(64) Frame {
 };
 
 } // namespace core
-} // namespace quote
+} // namespace etrader

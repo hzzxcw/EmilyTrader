@@ -7,7 +7,7 @@
 #include <memory>
 #include <dlfcn.h>
 
-using namespace quote;
+using namespace etrader;
 
 typedef strategy::BaseStrategy* (*CreateStrategyFunc)();
 

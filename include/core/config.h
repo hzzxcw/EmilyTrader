@@ -4,7 +4,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 
-namespace quote {
+namespace etrader {
 namespace core {
 
 struct Config {
@@ -35,4 +35,4 @@ struct Config {
 };
 
 } // namespace core
-} // namespace quote
+} // namespace etrader

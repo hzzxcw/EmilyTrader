@@ -5,7 +5,7 @@
 #include <memory>
 #include <functional>
 
-namespace quote {
+namespace etrader {
 namespace core {
 
 class Poller {
@@ -40,4 +40,4 @@ private:
 };
 
 } // namespace core
-} // namespace quote
+} // namespace etrader
